@@ -1,0 +1,97 @@
+{# Templates to display time #}
+{# 
+  from 'handy_time.jinja' import long_time, short_time, smart_time,
+   delta_mins, delta_hours, delta_days
+#}
+
+{%- macro long_time(ts) -%}
+  {%- set d = ((as_timestamp(ts) + 43200 -
+    as_timestamp(now()))/43200)|int(0) -%}
+  {%- set abs_d = d | abs -%}
+  {%- if d == 0 -%}
+    {%- set s = "Today" -%}
+  {%- elif d > 0 and d < 3 -%}
+    {%- set s = "Tomorrow" -%}
+  {%- elif d < 0 and d > -3 -%}
+    {%- set s = "Yesterday" -%}
+  {%- elif abs_d < 28 -%}
+    {%- set s = ((abs_d+1)/2)|round|int(0)|string + " days" -%}
+  {%- elif abs_d < 120 -%}
+    {%- set s = ((abs_d+1)/14)|round|int(0)|string + " weeks" -%}
+  {%- elif abs_d < 1460 -%}
+    {%- set s = ((abs_d+1)/60)|round|int(0)|string + " months" -%}
+  {%- else -%}
+    {%- set s = ((abs_d+1)/730)|round|int(0)|string + " years" -%}
+  {%- endif -%}
+  {%- if d > 0 and abs_d > 3 -%}
+    in {{ s }}
+  {%- elif d < 0 and abs_d > 2 -%}
+    {{ s }} ago
+  {%- else -%}
+    {{ s }}
+  {%- endif -%}
+{%- endmacro -%}
+
+{%- macro short_time(ts) -%}
+  {%- set d = now()|as_timestamp - ts|as_timestamp -%}
+  {%- set d = (((d / 30) | round(0, 'ceil')) * 30) - 30 -%}
+  {%- set abs_d = d | abs -%}
+  {%- set days = (abs_d / 86400) | round(0, 'floor') -%}
+  {%- set hours = ((abs_d % 86400) / 3600) | round(0, 'floor') -%}
+  {%- set mins = (((abs_d % 86400) % 3600) / 60) | round(0, 'floor') -%}
+  {%- set secs = (((abs_d % 86400) % 3600) % 60) | round(0, 'floor') -%}
+  {%- set s = "" -%}
+  {%- if days > 0 -%}
+    {%- set s = s + days|string + 'd ' -%}
+  {%- endif -%}
+  {%- if hours > 0 -%}
+    {%- set s = s + hours|string + 'h ' -%}
+  {%- endif -%}
+  {%- if mins > 0 -%}
+    {%- set s = s + mins|string + 'm ' -%}
+  {%- endif -%}
+  {%- if secs > 0 and days < 1 -%}
+    {%- set s = s + secs|string + 's ' -%}
+  {%- endif -%}
+  {%- if d == 0 -%}
+    now
+  {%- elif d < 0 -%}
+    in {{ s | trim }}
+  {%- else -%}
+    {{ s | trim }} ago
+  {%- endif -%}
+{%- endmacro -%}
+
+{%- macro smart_time(ts) -%}
+  {%- set d = now()|as_timestamp - ts|as_timestamp -%}
+  {%- set d = ((d / 30) | round(0, 'ceil')) * 30 -%}
+  {%- set abs_d = d | abs -%}
+  {%- set days = (abs_d / 86400) | round(0, 'floor') -%}
+  {%- if days >= 14 -%}
+    {{ long_time(ts) }}
+  {%- else -%}
+    {{ short_time(ts) }}
+  {%- endif -%}
+{%- endmacro -%}
+
+{%- macro delta_mins(ts) -%}
+  {%- set d = now()|as_timestamp - ts|as_timestamp -%}
+  {%- set mins = (((d|abs % 86400) % 3600) / 60) | round(0, 'floor') -%}
+  {%- if d > 0 -%}{%- set mins = -mins -%}{%- endif -%}
+  {{ mins }}
+{%- endmacro -%}
+
+{%- macro delta_hours(ts) -%}
+  {%- set d = now()|as_timestamp - ts|as_timestamp -%}
+  {%- set hours = ((d|abs % 86400) / 3600) | round(0, 'floor') -%}
+  {%- if d > 0 -%}{%- set hours = -hours -%}{%- endif -%}
+  {{ hours }}
+{%- endmacro -%}
+
+{%- macro delta_days(ts) -%}
+  {%- set d = now()|as_timestamp - ts|as_timestamp -%}
+  {%- set days = (d|abs / 86400) | round(0, 'floor') -%}
+  {%- if d > 0 -%}{%- set days = -days -%}{%- endif -%}
+  {{ days }}
+{%- endmacro -%}
+
