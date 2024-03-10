@@ -44,15 +44,8 @@ In an entity-row in a lovelace dashboard (using [custom:template-entity-row](htt
       - type: custom:template-entity-row
         entity: sensor.daylight_savings_days_until
         icon: mdi:calendar-clock
-        color: >-
-          {%- set e = states('sensor.daylight_savings_days_until') | int(0) -%}
-          {% if e < 2 %}red{% elif e < 7 %}orange{% else %}green{% endif %}
-        active: '{{ states(''sensor.daylight_savings_days_until'') | int(0) < 1 }}'
-        name: Next clock change
-        secondary: >-
-          {{ states('sensor.daylight_savings_next') | as_timestamp |
-          timestamp_custom('%a %-d %b %H:%M', true, 0) }} 
-        state: >-
+        name: Next Clock Change
+        state: |-
           {%- from 'handy_time.jinja' import smart_time -%} {{
           smart_time(states('sensor.daylight_savings_next')) }}
 
