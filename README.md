@@ -31,7 +31,7 @@ in 3 months
 ```
 
 # Examples
-In an entity-row in a lovelace dashboard (using custom:template-entity-row):
+In an entity-row in a lovelace dashboard (using [custom:template-entity-row](https://github.com/thomasloven/lovelace-template-entity-row)):
 
 ```
       - type: custom:template-entity-row
