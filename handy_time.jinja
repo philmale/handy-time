@@ -1,7 +1,7 @@
 {# Templates to display time #}
 {# 
   from 'handy_time.jinja' import long_time, short_time, smart_time,
-   delta_mins, delta_hours, delta_days
+   delta_mins, delta_hours, delta_days, format_hms, delta_duration
 #}
 
 {%- macro long_time(ts) -%}
@@ -95,3 +95,23 @@
   {{ days }}
 {%- endmacro -%}
 
+{%- macro format_hms(t) -%}
+  {%- set ta = t.split(':') -%}
+  {%- if ta[0]|int > 0 -%}{{- ta[0] -}}h {% endif -%}
+  {%- if ta[1]|int > 0 -%}{{- ta[1] -}}m {% endif -%}
+  {%- if ta[2]|int > 0 -%}{{- ta[2] -}}s {%- endif -%}
+{%- endmacro -%}
+
+{%- macro delta_duration(t1, t2) -%}
+  {%- set d = t1|float - t2|float -%}
+  {%- if (d == 0) -%}
+    -
+  {%- else -%}
+    {{- iif(d < 0, "-", "+") -}}
+    {%- set d = d | abs -%}
+    {%- set h = d | int -%}
+    {%- set m = ((d - h) * 60) | int -%}
+    {%- set s = (((d - h) * 60 - m) * 60) | int %}
+    {{- format_hms(h|string+":"+m|string+":"+s|string) -}}
+  {%- endif -%}
+{%- endmacro -%}
