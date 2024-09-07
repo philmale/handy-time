@@ -1,6 +1,6 @@
 # handy-time
 Custom template for Home Assistant with some handy time macros - mainly smart_time which gives an english readable string for a time in the past or the future to the nearest 30 seconds for use on dashboards, it gets more accurate as the time delta from now becomes smaller - just as you would say it was the aim!
-I wrote this to create something small and quick that would deal with the common dashboard display cases, If you are looking for somehting more comprehensive to manipulate time value check out [easy-time-jinja](https://github.com/Petro31/easy-time-jinja#date-arguments).
+I wrote this to create something small and quick that would deal with the common dashboard display cases, If you are looking for somehting more comprehensive to manipulate time value check out [easy-time-jinja](https://github.com/Petro31/easy-time-jinja).
 
 # Install
 Copy the handy_time.jinja file into your config/custom_templates directory in Home Assistant, then anywhere you want to use one or more of the macros in some Jinja template code use:
