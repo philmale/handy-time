@@ -1,28 +1,21 @@
 {# Templates to display time #}
-{# 
+{#
   from 'handy_time.jinja' import long_time, short_time, smart_time,
-   delta_mins, delta_hours, delta_days, format_hms, delta_duration
+   delta_mins, delta_hours, delta_days, delta_duration, format_hms
 #}
 
 {%- macro long_time(ts) -%}
-  {%- set d = ((as_timestamp(ts) + 43200 -
-    as_timestamp(now()))/43200)|int(0) -%}
+  {%- set d = ((as_timestamp(ts) + 43200 - as_timestamp(now())) / 43200) | int(0) -%}
   {%- set abs_d = d | abs -%}
-  {%- if d == 0 -%}
-    {%- set s = "Today" -%}
-  {%- elif d > 0 and d < 3 -%}
-    {%- set s = "Tomorrow" -%}
-  {%- elif d < 0 and d > -3 -%}
-    {%- set s = "Yesterday" -%}
-  {%- elif abs_d < 28 -%}
-    {%- set s = ((abs_d+1)/2)|round|int(0)|string + " days" -%}
-  {%- elif abs_d < 120 -%}
-    {%- set s = ((abs_d+1)/14)|round|int(0)|string + " weeks" -%}
-  {%- elif abs_d < 1460 -%}
-    {%- set s = ((abs_d+1)/60)|round|int(0)|string + " months" -%}
-  {%- else -%}
-    {%- set s = ((abs_d+1)/730)|round|int(0)|string + " years" -%}
-  {%- endif -%}
+  {%- set s = (
+    "Today" if d == 0 else
+    "Tomorrow" if d > 0 and d < 3 else
+    "Yesterday" if d < 0 and d > -3 else
+    ((abs_d + 1) / 2) | round | int(0) | string + " days" if abs_d < 28 else
+    ((abs_d + 1) / 14) | round | int(0) | string + " weeks" if abs_d < 120 else
+    ((abs_d + 1) / 60) | round | int(0) | string + " months" if abs_d < 1460 else
+    ((abs_d + 1) / 730) | round | int(0) | string + " years"
+  ) -%}
   {%- if d > 0 and abs_d > 3 -%}
     in {{ s }}
   {%- elif d < 0 and abs_d > 2 -%}
@@ -40,19 +33,12 @@
   {%- set hours = ((abs_d % 86400) / 3600) | round(0, 'floor') -%}
   {%- set mins = (((abs_d % 86400) % 3600) / 60) | round(0, 'floor') -%}
   {%- set secs = (((abs_d % 86400) % 3600) % 60) | round(0, 'floor') -%}
-  {%- set s = "" -%}
-  {%- if days > 0 -%}
-    {%- set s = s + days|string + 'd ' -%}
-  {%- endif -%}
-  {%- if hours > 0 -%}
-    {%- set s = s + hours|string + 'h ' -%}
-  {%- endif -%}
-  {%- if mins > 0 -%}
-    {%- set s = s + mins|string + 'm ' -%}
-  {%- endif -%}
-  {%- if secs > 0 and days < 1 -%}
-    {%- set s = s + secs|string + 's ' -%}
-  {%- endif -%}
+  {%- set s = (
+    (days|string + 'd ' if days > 0 else '') +
+    (hours|string + 'h ' if hours > 0 else '') +
+    (mins|string + 'm ' if mins > 0 else '') +
+    (secs|string + 's ' if secs > 0 and days < 1 else '')
+  ) -%}
   {%- if d == 0 -%}
     now
   {%- elif d < 0 -%}
@@ -74,44 +60,42 @@
   {%- endif -%}
 {%- endmacro -%}
 
-{%- macro delta_mins(ts) -%}
-  {%- set d = now()|as_timestamp - ts|as_timestamp -%}
-  {%- set mins = (((d|abs % 86400) % 3600) / 60) | round(0, 'floor') -%}
-  {%- if d > 0 -%}{%- set mins = -mins -%}{%- endif -%}
-  {{ mins }}
-{%- endmacro -%}
-
-{%- macro delta_hours(ts) -%}
-  {%- set d = now()|as_timestamp - ts|as_timestamp -%}
-  {%- set hours = ((d|abs % 86400) / 3600) | round(0, 'floor') -%}
-  {%- if d > 0 -%}{%- set hours = -hours -%}{%- endif -%}
-  {{ hours }}
-{%- endmacro -%}
-
 {%- macro delta_days(ts) -%}
-  {%- set d = now()|as_timestamp - ts|as_timestamp -%}
-  {%- set days = (d|abs / 86400) | round(0, 'floor') -%}
-  {%- if d > 0 -%}{%- set days = -days -%}{%- endif -%}
+  {%- set d = ts|as_timestamp - now()|as_timestamp -%}
+  {%- set days = (d / 86400) | round(0) -%}
   {{ days }}
 {%- endmacro -%}
-
+  
+{%- macro delta_hours(ts) -%}
+  {%- set d = ts|as_timestamp - now()|as_timestamp -%}
+  {%- set hours = (d / 3600) | round(0) -%}
+  {{ hours }}
+{%- endmacro -%}
+  
+{%- macro delta_mins(ts) -%}
+  {%- set d = ts|as_timestamp - now()|as_timestamp -%}
+  {%- set mins = (d / 60) | round(0) -%}
+  {{ mins }}
+{%- endmacro -%}
+  
 {%- macro format_hms(t) -%}
   {%- set ta = t.split(':') -%}
   {%- if ta[0]|int > 0 -%}{{- ta[0] -}}h {% endif -%}
   {%- if ta[1]|int > 0 -%}{{- ta[1] -}}m {% endif -%}
   {%- if ta[2]|int > 0 -%}{{- ta[2] -}}s {%- endif -%}
 {%- endmacro -%}
-
-{%- macro delta_duration(t1, t2) -%}
-  {%- set d = t1|float - t2|float -%}
-  {%- if (d == 0) -%}
-    -
-  {%- else -%}
-    {{- iif(d < 0, "-", "+") -}}
-    {%- set d = d | abs -%}
-    {%- set h = d | int -%}
-    {%- set m = ((d - h) * 60) | int -%}
-    {%- set s = (((d - h) * 60 - m) * 60) | int %}
-    {{- format_hms(h|string+":"+m|string+":"+s|string) -}}
-  {%- endif -%}
+  
+{%- macro delta_duration(ts1, ts2) -%}
+  {%- set d = ts1|as_timestamp - ts2|as_timestamp -%}
+  {%- set sign = "+" if d >= 0 else "-" -%}
+  {%- set d = d | abs -%}
+  {%- set days = (d // 86400) | int -%}
+  {%- set h = ((d % 86400) // 3600) | int -%}
+  {%- set m = ((d % 3600) // 60) | int -%}
+  {%- set s = (d % 60) | int -%}
+  {%- set dhms = (days|string + "d " if days > 0 else "") + 
+    (h|string + "h " if h > 0 else "") +
+    (m|string + "m " if m > 0 else "") +
+    (s|string + "s" if s > 0 else "") -%}
+  {{ sign + dhms if d != 0 else '-' }} 
 {%- endmacro -%}
