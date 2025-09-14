@@ -43,13 +43,6 @@ In an entity-row in a lovelace dashboard (using [custom:template-entity-row](htt
 
 ```
       - type: custom:template-entity-row
-        entity: input_datetime.last_power_cut
-        name: Last Power Cut
-        state: |-
-          {%- from 'handy_time.jinja' import smart_time -%}
-          {{ smart_time(states('input_datetime.last_power_cut')) }}
-
-      - type: custom:template-entity-row
         entity: sensor.daylight_savings_days_until
         icon: mdi:calendar-clock
         name: Next Clock Change
@@ -58,21 +51,27 @@ In an entity-row in a lovelace dashboard (using [custom:template-entity-row](htt
           smart_time(states('sensor.daylight_savings_next')) }}
 ```
 
-which will look like this:
+Here with secondary text in the entity-row:
+```
+      - type: custom:template-entity-row
+        entity: input_datetime.last_power_cut
+        name: Last Power Cut
+        state: |-
+          {%- from 'handy_time.jinja' import smart_time -%}
+          {{ smart_time(states('input_datetime.last_power_cut')) }}
+        secondary: >-
+          Last cut on {{ states('input_datetime.last_power_cut') | as_timestamp | timestamp_custom('%a %-d %b %H:%M', true, 0)  }}
+```
+...which looks like this:
 
 <img width="480" height="65" alt="Screenshot 2025-09-14 at 23 07 26" src="https://github.com/user-attachments/assets/824910e9-77e0-45b8-b0e2-847b7f5785fb" />
 
 
-A more complex example from my dashboard...
+...or...
 ```
       - entity: sensor.system_monitor_last_boot
         type: custom:template-entity-row
         name: Alfred Uptime
-        active: true
-        color: >-
-          {% set exp = as_timestamp(now()) -
-          as_timestamp(states('sensor.system_monitor_last_boot'))|int %} {% if
-          exp < 3600 %}red{% elif exp < 43200 %}orange{% else %}green{% endif %}
         state: |-
           {%- from 'handy_time.jinja' import smart_time -%}
           {{ smart_time(states('sensor.system_monitor_last_boot')) }}
@@ -84,11 +83,6 @@ A more complex example from my dashboard...
       - entity: sensor.uptime
         type: custom:template-entity-row
         name: Home Assistant {{ states('sensor.current_version') }} Uptime
-        active: true
-        color: >-
-          {% set exp = as_timestamp(now()) -
-          as_timestamp(states('sensor.uptime'))|int %} {% if exp < 3600 %}red{%
-          elif exp < 43200 %}orange{% else %}green{% endif %}
         state: |-
           {%- from 'handy_time.jinja' import smart_time -%}
           {{ smart_time(states('sensor.uptime')) }}
@@ -100,8 +94,8 @@ A more complex example from my dashboard...
 
 <img width="460" height="110" alt="Screenshot 2025-09-14 at 23 11 56" src="https://github.com/user-attachments/assets/87db7d16-07b4-460a-a8b0-543987919d40" />
 
-or from my Formula 1 sensor:
+...or from my Formula 1 sensor:
 
 <img width="476" height="64" alt="Screenshot 2025-09-14 at 23 07 45" src="https://github.com/user-attachments/assets/41a131fe-3b4c-4e79-9266-9f6a5eb4c450" />
 
-It is of course possible to use the macros in scripts and automations as well - they return strings like all Jinja2 macros.
+You can use the macros in scripts and automations as well - anywhere a template can be used - they return strings like all Jinja2 macros.
