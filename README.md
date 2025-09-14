@@ -168,7 +168,7 @@ Formating 4:0:0: 4h
 
 ```delta_duration``` takes two timestamps and returns the days, hours, mins and seconds between them as a string.
 
-```format_hms``` takes a string of the formation h:m:s and turns it into 'h m s' with zero values removed - try it you'll see, its good in dashboards!
+```format_hms``` takes a string of the formation h:m:s and turns it into 'h m s' with zero values removed - try it you'll see, it's good in dashboards!
 
 ```format_hours``` takes a decimal hours and formats it into 'h m s' format, again with zero values remove.
 
