@@ -14,7 +14,7 @@ Once loaded, anywhere you want to use one or more of the macros, import them lik
    delta_mins, delta_hours, delta_days -%}
 ```
 
-# To play with
+# How to Use
 You can try this in the ```Developers Tools->Template``` to see how it behaves:
 ```
 {%- from 'handy_time.jinja' import smart_time -%}
@@ -37,6 +37,14 @@ in 5h 1m
 in 3 months
 3 months ago
 ```
+
+You can try the other macros in the file too. ```long_time``` displays timestamps in days, weeks and months; ```short_time``` in days, hours, minutes and seconds.
+```smart_time``` displays timestamps 14 days before or after now() using ```long_time```, otherwise it uses ```short_time```.
+
+```delta_days```, ```delta_hours```, ```delta_mins``` all show the time from now() in either days, hours or minutes.
+
+
+
 
 # Examples
 In an entity-row in a lovelace dashboard (using [custom:template-entity-row](https://github.com/thomasloven/lovelace-template-entity-row)):
