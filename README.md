@@ -1,7 +1,9 @@
 # handy-time
 Custom template for Home Assistant with some handy time macros - mainly smart_time which gives an English readable string for a time in the past or the future to the nearest 30 seconds for use on dashboards (which typically update every minute in HA), it gets more accurate as the time delta from now becomes smaller - just as you would say it!
 
-I wrote this as a light and simple macro to deal with easily displaying a datetime entity on the lovelace dashboard in a better format than the buuilt in Home Asssitant way - and one that could handle times both in the past and in the future. If you are looking for something more comprehensive to manipulate time values check out [easy-time-jinja](https://github.com/Petro31/easy-time-jinja).
+I wrote this as a light and simple macro to deal with easily displaying a datetime entity on the Lovelace dashboard that could handle times both in the past and in the future (unlike ```time_since``` and ```relative_time```).
+
+If you are looking for something more comprehensive to manipulate time values check out [easy-time-jinja](https://github.com/Petro31/easy-time-jinja).
 
 # Install
 Copy the handy_time.jinja file into your config/custom_templates directory in Home Assistant, and then either restart Home Assistant or in the ```Developers Tools->Actions``` run the ```Reload custom Jinja2 template``` action.
