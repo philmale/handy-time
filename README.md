@@ -1,9 +1,9 @@
 # handy-time
 Custom template for Home Assistant with some handy time macros - mainly smart_time which gives an English readable string for a time in the past or the future to the nearest 30 seconds for use on dashboards (which typically update every minute in HA), it gets more accurate as the time delta from now becomes smaller - just as you would say it!
 
-I wrote this as a light and simple macro to deal with easily displaying a timestamp on the Lovelace dashboard that could handle times both in the past and in the future (unlike ```time_since``` and ```time_until```).
+I wrote this as a light and simple macro to deal with easily displaying a timestamp on the Lovelace dashboard that could handle times both in the past and in the future (unlike the built-in ```time_since``` and ```time_until``` jinja2 functions). These macros also present the time difference more precisely than the built-in functions.
 
-If you are looking for something more comprehensive to manipulate time values check out [easy-time-jinja](https://github.com/Petro31/easy-time-jinja).
+For example, for a date that is 49 days in the future, ```time_until``` will give you ```in 2 months``` whereas smart_time will give you ```in 7 weeks```.
 
 # Install
 Copy the handy_time.jinja file into your config/custom_templates directory in Home Assistant, and then either restart Home Assistant or in the ```Developers Tools->Actions``` run the ```Reload custom Jinja2 template``` action.
@@ -23,13 +23,13 @@ You can try this in the ```Developers Tools->Template``` to see how it behaves:
 Date: {{ a | as_timestamp | timestamp_custom('%a %-d %b %H:%M', true, 0)  }}
 Smart time: {{ smart_time(a) }}
 ```
-... and you should see:
+... and you should see (with your date obviously!):
 ```
 Date: Wed 10 Sep 00:40
 Smart time: 5d ago
 ```
 
-If you want to see everything, paste this in:
+If you want to see everything, paste this in to the ```Developers Tools->Template```:
 ```
 {%- from 'handy_time.jinja' import long_time, short_time, smart_time,
    delta_mins, delta_hours, delta_days, delta_duration, format_hms, format_hours -%}
@@ -42,6 +42,7 @@ Long time: {{ long_time(a) }}
 Delta Min: {{ delta_mins(a) }}
 Delta Hours: {{ delta_hours(a) }}
 Delta days: {{ delta_days(a) }}
+time_since: {{ time_since(a) }}
 {% set a = now() - timedelta(hours=5, seconds=55) %}
 Date: {{ a | as_timestamp | timestamp_custom('%a %-d %b %H:%M', true, 0)  }}
 Smart time: {{ smart_time(a) }}
@@ -50,6 +51,7 @@ Long time: {{ long_time(a) }}
 Delta Min: {{ delta_mins(a) }}
 Delta Hours: {{ delta_hours(a) }}
 Delta days: {{ delta_days(a) }}
+time_since: {{ time_since(a) }}
 {% set a = now() + timedelta(hours=5, seconds=55) %}
 Date: {{ a | as_timestamp | timestamp_custom('%a %-d %b %H:%M', true, 0)  }}
 Smart time: {{ smart_time(a) }}
@@ -58,6 +60,7 @@ Long time: {{ long_time(a) }}
 Delta Min: {{ delta_mins(a) }}
 Delta Hours: {{ delta_hours(a) }}
 Delta days: {{ delta_days(a) }}
+time_until: {{ time_until(a) }}
 {% set a = now() + timedelta(days=100) %}
 Date: {{ a | as_timestamp | timestamp_custom('%a %-d %b %H:%M', true, 0)  }}
 Smart time: {{ smart_time(a) }}
@@ -66,6 +69,7 @@ Long time: {{ long_time(a) }}
 Delta Min: {{ delta_mins(a) }}
 Delta Hours: {{ delta_hours(a) }}
 Delta days: {{ delta_days(a) }}
+time_until: {{ time_until(a) }}
 {% set a = now() - timedelta(days=100) %}
 Date: {{ a | as_timestamp | timestamp_custom('%a %-d %b %H:%M', true, 0)  }}
 Smart time: {{ smart_time(a) }}
@@ -74,6 +78,7 @@ Long time: {{ long_time(a) }}
 Delta Min: {{ delta_mins(a) }}
 Delta Hours: {{ delta_hours(a) }}
 Delta days: {{ delta_days(a) }}
+time_since: {{ time_since(a) }}
 {% set b = a - timedelta(hours=3, minutes=4, seconds=4) %}
 A Date: {{ a | as_timestamp | timestamp_custom('%a %-d %b %H:%M:%S', true, 0)  }}
 B Date: {{ b | as_timestamp | timestamp_custom('%a %-d %b %H:%M:%S', true, 0)  }}
@@ -96,60 +101,65 @@ Formating 4:23:23: {{ format_hms('4:23:23') }}
 Formating 4:0:23: {{ format_hms('4:0:23') }}
 Formating 4:0:0: {{ format_hms('4:0:0') }}
 ```
-... and you should see:
+... and you should see (again your date will be different):
 ```
-Date: Wed 10 Sep 00:39
+Date: Thu 8 Jan 01:08
 Smart time: 5d ago
 Short time: 5d ago
 Long time: 5 days ago
 Delta Min: -7200
 Delta Hours: -120
 Delta days: -5
+time_since: 5 days
 
-Date: Sun 14 Sep 19:38
+Date: Mon 12 Jan 20:07
 Smart time: 5h 30s ago
 Short time: 5h 30s ago
 Long time: Today
 Delta Min: -301
 Delta Hours: -5
 Delta days: 0
+time_since: 5 hours
 
-Date: Mon 15 Sep 05:39
-Smart time: in 5h 1m
-Short time: in 5h 1m
-Long time: Tomorrow
+Date: Tue 13 Jan 06:08
+Smart time: in 5h 30s
+Short time: in 5h 30s
+Long time: Today
 Delta Min: 301
 Delta Hours: 5
 Delta days: 0
+time_until: 5 hours
 
-Date: Wed 24 Dec 00:39
-Smart time: in 3 months
-Short time: in 100d 1h
-Long time: in 3 months
-Delta Min: 144060
-Delta Hours: 2401
+Date: Thu 23 Apr 01:08
+Smart time: in 14 weeks
+Short time: in 99d 22h 59m
+Long time: in 14 weeks
+Delta Min: 143940
+Delta Hours: 2399
 Delta days: 100
+time_until: 3 months
 
-Date: Sat 7 Jun 00:39
-Smart time: 3 months ago
-Short time: 100d ago
-Long time: 3 months ago
-Delta Min: -144000
-Delta Hours: -2400
+Date: Sun 5 Oct 01:08
+Smart time: 14 weeks ago
+Short time: 100d 1h ago
+Long time: 14 weeks ago
+Delta Min: -144060
+Delta Hours: -2401
 Delta days: -100
+time_since: 3 months
 
-A Date: Sat 7 Jun 00:39:00
-B Date: Fri 6 Jun 21:34:56
+A Date: Sun 5 Oct 01:08:00
+B Date: Sat 4 Oct 22:03:56
 A->B Delta duration: +3h 4m 4s
 B->A Delta duration: -3h 4m 4s
 
-A Date: Sat 7 Jun 00:39:00
-B Date: Fri 6 Jun 21:38:56
+A Date: Sun 5 Oct 01:08:00
+B Date: Sat 4 Oct 22:07:56
 A->B Delta duration: +3h 4s
 B->A Delta duration: -3h 4s
 
-A Date: Sat 7 Jun 00:39:00
-B Date: Fri 6 Jun 21:39:00
+A Date: Sun 5 Oct 01:08:00
+B Date: Sat 4 Oct 22:08:00
 A->B Delta duration: +3h 
 B->A Delta duration: -3h 
 
