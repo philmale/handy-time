@@ -1,11 +1,9 @@
 # handy-time
 Custom template for Home Assistant with some handy macros to format time for display on a dashboard, in a text message or an audio announcement.
 
-This isn't a macro set to manipulate time values, but instead to display or print them in a very human readable way.
+This isn't a macro set to manipulate time values, but instead to display or print them in a human readable way.
 
-I wrote this as a light and simple macro to deal with easily displaying a timestamp on the Lovelace dashboard that could handle times both in the past and in the future (unlike the built-in ```time_since``` and ```time_until``` jinja2 functions). These macros also present the time difference more precisely than the built-in functions.
-
-For example, for a date that is 49 days in the future, ```time_until``` will give you ```in 2 months``` whereas smart_time will give you ```in 7 weeks```.
+I wrote this as a light and simple macro to deal with easily displaying a timestamp on the Lovelace dashboard that could handle times both in the past and in the future.
 
 There is a self-documenting template below that you can paste into the ```Developers Tools->Template``` to see exactly what is going on.
 
