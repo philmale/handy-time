@@ -1,4 +1,5 @@
-{# Phil: Templates to display time in a human way #}
+{# Phil: Templates to display time #}
+{# LA-HA v2.1 #}
 
 {# 
   from 'handy_time.jinja' import long_time, short_time, smart_time,
@@ -13,7 +14,7 @@
 {%- macro long_time(ts) -%}
   {%- set now_ts = as_timestamp(now()) -%}
   {%- set ts_ts  = as_timestamp(ts) -%}
-  {%- set delta  = ts_ts - now_ts -%}         
+  {%- set delta  = ts_ts - now_ts -%}
 
   {%- set d = ((delta + (43200 if delta >= 0 else -43200)) / 86400) | int(0) -%}
   {%- set abs_d = d | abs -%}
@@ -52,7 +53,7 @@
 {%- macro short_time(ts) -%}
   {%- set now_ts = as_timestamp(now()) -%}
   {%- set ts_ts  = as_timestamp(ts) -%}
-  {%- set delta  = ts_ts - now_ts -%}         
+  {%- set delta  = ts_ts - now_ts -%}
 
   {%- set abs_bucket = ((delta | abs) / 30) | int(0) * 30 -%}
   {%- if abs_bucket == 0 -%}
@@ -90,85 +91,118 @@
   {%- endif -%}
 {%- endmacro -%}
 
-{# How many days since this time #}
-{# Parameters:
-   - ts: Timestamp
-#}
+{# Round-half-up helper
+ # avoids banker's rounding and handles negatives sensibly
+ #}
+{%- macro round_half_up(x) -%}
+  {{ (x + (0.5 if x >= 0 else -0.5)) | int(0) }}
+{%- endmacro -%}
+
+{# How many days from now to this time (future +, past -),
+ # rounded to nearest day
+ #}
 {%- macro delta_days(ts) -%}
-  {%- set d = ts|as_timestamp - now()|as_timestamp -%}
-  {%- set days = (d / 86400) | round(0) -%}
-  {{ days }}
+  {%- set x = (ts|as_timestamp - now()|as_timestamp) / 86400 -%}
+  {{ round_half_up(x) }}
 {%- endmacro -%}
 
-{# How many hours since this time #}
-{# Parameters:
-   - ts: Timestamp
-#}
+{# How many hours from now to this time (future +, past -),
+ # rounded to nearest hour
+ #}
 {%- macro delta_hours(ts) -%}
-  {%- set d = ts|as_timestamp - now()|as_timestamp -%}
-  {%- set hours = (d / 3600) | round(0) -%}
-  {{ hours }}
+  {%- set x = (ts|as_timestamp - now()|as_timestamp) / 3600 -%}
+  {{ round_half_up(x) }}
 {%- endmacro -%}
 
-{# How many minutes since this time #}
-{# Parameters:
-   - ts: Timestamp
-#}
+{# How many minutes from now to this time (future +, past -), 
+ # rounded to nearest minute
+ #}
 {%- macro delta_mins(ts) -%}
-  {%- set d = ts|as_timestamp - now()|as_timestamp -%}
-  {%- set mins = (d / 60) | round(0) -%}
-  {{ mins }}
+  {%- set x = (ts|as_timestamp - now()|as_timestamp) / 60 -%}
+  {{ round_half_up(x) }}
 {%- endmacro -%}
 
-{# Convert h:m:s into h m s string #}
-{# Parameters:
-   - t: Time in h:m:s format
+{# Convert h:m:s or h:m or s into "Xh Ym Zs"
+   Rule: m:s must be passed as 0:m:s
 #}
 {%- macro format_hms(t) -%}
-  {%- set ta = t.split(':') -%}
-  {%- if ta[0]|int > 0 -%}{{- ta[0] -}}h {% endif -%}
-  {%- if ta[1]|int > 0 -%}{{- ta[1] -}}m {% endif -%}
-  {%- if ta[2]|int > 0 -%}{{- ta[2] -}}s {%- endif -%}
+  {%- if t is not string -%}
+    {{- t -}}
+  {%- else -%}
+    {%- set raw = (t | trim | regex_replace('[^0-9:]', '')) -%}
+    {%- set parts = raw.split(':') -%}
+    {%- set n = parts | length -%}
+
+    {%- set h = (parts[0] | int(0)) if n >= 2 else 0 -%}
+    {%- set m = (parts[1] | int(0)) if n >= 2 else 0 -%}
+    {%- set s = (parts[2] | int(0)) if n == 3 else (parts[0] | int(0)) if n == 1 else 0 -%}
+
+    {%- set total = h*3600 + m*60 + s -%}
+    {%- set h = (total // 3600) | int -%}
+    {%- set m = ((total % 3600) // 60) | int -%}
+    {%- set s = (total % 60) | int -%}
+
+    {%- if total == 0 -%}
+      0s
+    {%- else -%}
+      {%- if h > 0 -%}{{- h -}}h {% endif -%}
+      {%- if m > 0 -%}{{- m -}}m {% endif -%}
+      {%- if s > 0 -%}{{- s -}}s{% endif -%}
+    {%- endif -%}
+  {%- endif -%}
 {%- endmacro -%}
 
-{# Convert decimal hours into h m s #}
-{# Parameters:
-   - decminal_hours: Number of hours in decimal
-#}
+{# Convert decimal hours into "Xh Ym Zs" (rounded, half-up) #}
 {%- macro format_hours(decimal_hours) -%}
-  {%- set total_seconds = (decimal_hours * 3600) | round(0) -%}
+  {%- set x = decimal_hours * 3600 -%}
+  {%- set total_seconds = (x + (0.5 if x >= 0 else -0.5)) | int(0) -%}
+
   {%- if total_seconds == 0 -%}
     0s
   {%- else -%}
     {%- set sign = "-" if total_seconds < 0 else "" -%}
     {%- set total_seconds = total_seconds | abs -%}
-    {%- set hours = (total_seconds // 3600) | int -%}
-    {%- set minutes = ((total_seconds % 3600) // 60) | int -%}
-    {%- set seconds = (total_seconds % 60) | int -%}
-    {%- set time_str = (
-      (hours|string + "h " if hours > 0 else "") +
-      (minutes|string + "m " if minutes > 0 else "") +
-      (seconds|string + "s " if seconds > 0 else "")
+    {%- set h = (total_seconds // 3600) | int -%}
+    {%- set m = ((total_seconds % 3600) // 60) | int -%}
+    {%- set s = (total_seconds % 60) | int -%}
+
+    {%- set out = (
+      (h|string + "h " if h > 0 else "") +
+      (m|string + "m " if m > 0 else "") +
+      (s|string + "s"  if s > 0 else "")
     ) | trim -%}
-    {{ sign + time_str }}
+
+    {{ sign + out }}
   {%- endif -%}
 {%- endmacro -%}
 
-{# How many days between these times #}
-{# Parameters:
-   - ts1/ts2: Timestamps to calculate between
+{# Duration between ts1 and ts2 as "Xd Yh Zm Ws"
+   Parameters:
+     - ts1, ts2 : timestamps
+     - show_plus: boolean (default true). If false, '+' is omitted for positive durations
+     - zero_text: string to display when duration is zero (default "0s")
 #}
-{%- macro delta_duration(ts1, ts2) -%}
+{%- macro delta_duration(ts1, ts2, show_plus=true, zero_text="0s") -%}
   {%- set d = ts1|as_timestamp - ts2|as_timestamp -%}
-  {%- set sign = "+" if d >= 0 else "-" -%}
-  {%- set d = d | abs -%}
-  {%- set days = (d // 86400) | int -%}
-  {%- set h = ((d % 86400) // 3600) | int -%}
-  {%- set m = ((d % 3600) // 60) | int -%}
-  {%- set s = (d % 60) | int -%}
-  {%- set dhms = (days|string + "d " if days > 0 else "") + 
-    (h|string + "h " if h > 0 else "") +
-    (m|string + "m " if m > 0 else "") +
-    (s|string + "s" if s > 0 else "") -%}
-  {{ sign + dhms if d != 0 else '-' }}
+
+  {%- if d == 0 -%}
+    {{ zero_text }}
+  {%- else -%}
+    {%- set sign = "-" if d < 0 else ("+" if show_plus else "") -%}
+    {%- set d = d | abs -%}
+
+    {%- set days = (d // 86400) | int -%}
+    {%- set h = ((d % 86400) // 3600) | int -%}
+    {%- set m = ((d % 3600) // 60) | int -%}
+    {%- set s = (d % 60) | int -%}
+
+    {%- set out = (
+      (days|string + "d " if days > 0 else "") +
+      (h|string    + "h " if h > 0 else "") +
+      (m|string    + "m " if m > 0 else "") +
+      (s|string    + "s"  if s > 0 else "")
+    ) | trim -%}
+
+    {{ sign + out }}
+  {%- endif -%}
 {%- endmacro -%}
