@@ -1,14 +1,18 @@
 # handy-time
-Custom template for Home Assistant with some handy time macros - mainly smart_time which gives an English readable string for a time in the past or the future to the nearest 30 seconds for use on dashboards (which typically update every minute in HA), it gets more accurate as the time delta from now becomes smaller - just as you would say it!
+Custom template for Home Assistant with some handy macros to format time for display on a dashboard, in a text message or an audio announcement.
+
+This isn't a macro set to manipulate time values, but instead to display or print them in a very human readable way.
 
 I wrote this as a light and simple macro to deal with easily displaying a timestamp on the Lovelace dashboard that could handle times both in the past and in the future (unlike the built-in ```time_since``` and ```time_until``` jinja2 functions). These macros also present the time difference more precisely than the built-in functions.
 
 For example, for a date that is 49 days in the future, ```time_until``` will give you ```in 2 months``` whereas smart_time will give you ```in 7 weeks```.
 
+There is a self-documenting template below that you can paste into the ```Developers Tools->Template``` to see exactly what is going on.
+
 # Install
 Copy the handy_time.jinja file into your config/custom_templates directory in Home Assistant, and then either restart Home Assistant or in the ```Developers Tools->Actions``` run the ```Reload custom Jinja2 template``` action.
 
-Once loaded, anywhere you want to use one or more of the macros, import them like this:
+Once loaded, anywhere you want to use one or more of the macros, import them like this (just list the ones you want to use):
 ```
 {%- from 'handy_time.jinja' import long_time, short_time, smart_time,
    delta_mins, delta_hours, delta_days, delta_duration, format_hms, format_hours -%}
@@ -31,143 +35,331 @@ Smart time: 5d ago
 
 If you want to see everything, paste this in to the ```Developers Tools->Template```:
 ```
+{# ---------------------------------------------------------------------------
+  handy_time.jinja — User guide & examples (Home Assistant template output)
+  Paste into: Developer Tools → Template
+
+  Notes about HA built-ins:
+    - time_since(x) is meaningful for past times (future times are not useful)
+    - time_until(x) is meaningful for future times (past times are not useful)
+--------------------------------------------------------------------------- #}
+
 {%- from 'handy_time.jinja' import long_time, short_time, smart_time,
    delta_mins, delta_hours, delta_days, delta_duration, format_hms, format_hours -%}
 
-{% set a = now() - timedelta(days=5) %}
-Date: {{ a | as_timestamp | timestamp_custom('%a %-d %b %H:%M', true, 0)  }}
-Smart time: {{ smart_time(a) }}
-Short time: {{ short_time(a) }}
-Long time: {{ long_time(a) }}
-Delta Min: {{ delta_mins(a) }}
-Delta Hours: {{ delta_hours(a) }}
-Delta days: {{ delta_days(a) }}
-time_since: {{ time_since(a) }}
-{% set a = now() - timedelta(hours=5, seconds=55) %}
-Date: {{ a | as_timestamp | timestamp_custom('%a %-d %b %H:%M', true, 0)  }}
-Smart time: {{ smart_time(a) }}
-Short time: {{ short_time(a) }}
-Long time: {{ long_time(a) }}
-Delta Min: {{ delta_mins(a) }}
-Delta Hours: {{ delta_hours(a) }}
-Delta days: {{ delta_days(a) }}
-time_since: {{ time_since(a) }}
-{% set a = now() + timedelta(hours=5, seconds=55) %}
-Date: {{ a | as_timestamp | timestamp_custom('%a %-d %b %H:%M', true, 0)  }}
-Smart time: {{ smart_time(a) }}
-Short time: {{ short_time(a) }}
-Long time: {{ long_time(a) }}
-Delta Min: {{ delta_mins(a) }}
-Delta Hours: {{ delta_hours(a) }}
-Delta days: {{ delta_days(a) }}
-time_until: {{ time_until(a) }}
-{% set a = now() + timedelta(days=100) %}
-Date: {{ a | as_timestamp | timestamp_custom('%a %-d %b %H:%M', true, 0)  }}
-Smart time: {{ smart_time(a) }}
-Short time: {{ short_time(a) }}
-Long time: {{ long_time(a) }}
-Delta Min: {{ delta_mins(a) }}
-Delta Hours: {{ delta_hours(a) }}
-Delta days: {{ delta_days(a) }}
-time_until: {{ time_until(a) }}
-{% set a = now() - timedelta(days=100) %}
-Date: {{ a | as_timestamp | timestamp_custom('%a %-d %b %H:%M', true, 0)  }}
-Smart time: {{ smart_time(a) }}
-Short time: {{ short_time(a) }}
-Long time: {{ long_time(a) }}
-Delta Min: {{ delta_mins(a) }}
-Delta Hours: {{ delta_hours(a) }}
-Delta days: {{ delta_days(a) }}
-time_since: {{ time_since(a) }}
-{% set b = a - timedelta(hours=3, minutes=4, seconds=4) %}
-A Date: {{ a | as_timestamp | timestamp_custom('%a %-d %b %H:%M:%S', true, 0)  }}
-B Date: {{ b | as_timestamp | timestamp_custom('%a %-d %b %H:%M:%S', true, 0)  }}
-A->B Delta duration: {{ delta_duration(a, b) }}
-B->A Delta duration: {{ delta_duration(b, a) }}
-{% set b = a - timedelta(hours=3, seconds=4) %}
-A Date: {{ a | as_timestamp | timestamp_custom('%a %-d %b %H:%M:%S', true, 0)  }}
-B Date: {{ b | as_timestamp | timestamp_custom('%a %-d %b %H:%M:%S', true, 0)  }}
-A->B Delta duration: {{ delta_duration(a, b) }}
-B->A Delta duration: {{ delta_duration(b, a) }}
-{% set b = a - timedelta(hours=3) %}
-A Date: {{ a | as_timestamp | timestamp_custom('%a %-d %b %H:%M:%S', true, 0)  }}
-B Date: {{ b | as_timestamp | timestamp_custom('%a %-d %b %H:%M:%S', true, 0)  }}
-A->B Delta duration: {{ delta_duration(a, b) }}
-B->A Delta duration: {{ delta_duration(b, a) }}
+{%- set n = now() -%}
 
-Formating 34.2 hours: {{ format_hours(34.2) }}
-Formating 34.223 hours: {{ format_hours(34.223) }}
-Formating 4:23:23: {{ format_hms('4:23:23') }}
-Formating 4:0:23: {{ format_hms('4:0:23') }}
-Formating 4:0:0: {{ format_hms('4:0:0') }}
+{%- macro dt(t) -%}
+{{ t | as_timestamp | timestamp_custom('%a %-d %b %H:%M:%S', true, 0) }}
+{%- endmacro -%}
+
+{%- macro rel_block(title, ts) -%}
+{{ title }}
+When:       {{ dt(ts) }}
+smart_time: {{ smart_time(ts) }}
+short_time: {{ short_time(ts) }}
+long_time:  {{ long_time(ts) }}
+delta_mins: {{ delta_mins(ts) }}
+delta_hours:{{ delta_hours(ts) }}
+delta_days: {{ delta_days(ts) }}
+{%- endmacro -%}
+
+{%- macro builtin_block_past(ts) -%}
+HA time_since: {{ time_since(ts) }}
+{%- endmacro -%}
+
+{%- macro builtin_block_future(ts) -%}
+HA time_until: {{ time_until(ts) }}
+{%- endmacro -%}
+
+{%- macro num_block(title, ts) -%}
+{{ title }}
+Target:     {{ dt(ts) }}
+delta_mins: {{ delta_mins(ts) }}
+delta_hours:{{ delta_hours(ts) }}
+delta_days: {{ delta_days(ts) }}
+{%- endmacro -%}
+
+{%- macro duration_block(title, a, b) -%}
+{{ title }}
+A: {{ dt(a) }}
+B: {{ dt(b) }}
+A→B default:                 {{ delta_duration(a, b) }}
+A→B show_plus=false:         {{ delta_duration(a, b, false) }}
+A→A default zero:            {{ delta_duration(a, a) }}
+A→A zero_text="now":         {{ delta_duration(a, a, true, "now") }}
+A→A no plus, zero_text="-":  {{ delta_duration(a, a, false, "-") }}
+B→A default:                 {{ delta_duration(b, a) }}
+{%- endmacro -%}
+
+handy_time.jinja — examples
+Now: {{ dt(n) }}
+
+================================================================================
+1) Relative time for UI labels
+================================================================================
+{%- set ts = n + timedelta(hours=5, minutes=12, seconds=8) %}
+{{ rel_block('Near future (compact countdown)', ts) }}
+{{ builtin_block_future(ts) }}
+---
+{%- set ts = n - timedelta(hours=3, minutes=4, seconds=4) %}
+{{ rel_block('Near past ("last seen")', ts) }}
+{{ builtin_block_past(ts) }}
+---
+{%- set ts = n + timedelta(days=52, hours=1, minutes=1) %}
+{{ rel_block('Mid-range future (weeks/months wording)', ts) }}
+{{ builtin_block_future(ts) }}
+---
+{%- set ts = n - timedelta(days=430) %}
+{{ rel_block('Far past (months/years wording)', ts) }}
+{{ builtin_block_past(ts) }}
+
+================================================================================
+2) short_time stability (30-second buckets)
+================================================================================
+   Dashboards often refresh ~1 minute; bucketing reduces “jitter”.
+   Behaviour:
+     - <30s  => "now"
+     - 30s+  => bucketed to 30s steps
+     - seconds omitted once >= 1 day 
+{% set ts = n + timedelta(seconds=20) %}
+{{ rel_block('Future +20s (shows "now")', ts) }}
+{{ builtin_block_future(ts) }}
+---
+{%- set ts = n + timedelta(seconds=30) %}
+{{ rel_block('Future +30s (shows "in 30s")', ts) }}
+{{ builtin_block_future(ts) }}
+---
+{%- set ts = n - timedelta(seconds=29) %}
+{{ rel_block('Past -29s (shows "now")', ts) }}
+{{ builtin_block_past(ts) }}
+---
+{%- set ts = n - timedelta(seconds=30) %}
+{{ rel_block('Past -30s (shows "30s ago")', ts) }}
+{{ builtin_block_past(ts) }}
+
+================================================================================
+3) smart_time threshold (short vs long)
+================================================================================
+   <14 days => short_time, >=14 days => long_time
+{% set ts = n + timedelta(days=13, hours=23) %}
+{{ rel_block('13d 23h away (uses short_time)', ts) }}
+{{ builtin_block_future(ts) }}
+---
+{%- set ts = n + timedelta(days=14) %}
+{{ rel_block('14d away (uses long_time)', ts) }}
+{{ builtin_block_future(ts) }}
+
+================================================================================
+4) Numeric deltas (rounded to nearest, half-up)
+================================================================================
+   Sign convention: future +, past -
+   Rounding: half-up (2.5 -> 3, -2.5 -> -3)
+{{ num_block('Future +2h 24m (2.4h -> 2)', n + timedelta(hours=2, minutes=24)) }}
+---
+{{ num_block('Future +2h 30m (2.5h -> 3)', n + timedelta(hours=2, minutes=30)) }}
+---
+{{ num_block('Past -2h 30m (-2.5h -> -3)', n - timedelta(hours=2, minutes=30)) }}
+
+================================================================================
+5) Duration between two timestamps (delta_duration)
+================================================================================
+
+{%- set a = n - timedelta(hours=1, minutes=2, seconds=3) -%}
+{% set b = n - timedelta(hours=4, minutes=6, seconds=7) %}
+{{ duration_block('delta_duration(ts1, ts2, show_plus=true, zero_text="0s")', a, b) }}
+
+================================================================================
+6) Formatting helpers
+================================================================================
+format_hours(decimal_hours) — decimal hours → "Xh Ym Zs"
+format_hours(1.5):     {{ format_hours(1.5) }}
+format_hours(0.0167):  {{ format_hours(0.0167) }}
+format_hours(-2.5083): {{ format_hours(-2.5083) }}
+---
+format_hms("h:m:s" | "h:m" | "s") → "Xh Ym Zs"
+Convention: for m:s, pass 0:m:s
+
+format_hms('4:23:23'): {{ format_hms('4:23:23') }}
+format_hms('4:3'):     {{ format_hms('4:3') }}
+format_hms('0:4:3'):   {{ format_hms('0:4:3') }}
+format_hms('90'):      {{ format_hms('90') }}
+format_hms('1:120'):   {{ format_hms('1:120') }}
 ```
 ... and you should see (again your date will be different):
 ```
-Date: Thu 8 Jan 01:08
-Smart time: 5d ago
-Short time: 5d ago
-Long time: 5 days ago
-Delta Min: -7200
-Delta Hours: -120
-Delta days: -5
-time_since: 5 days
+handy_time.jinja — examples
+Now: Tue 13 Jan 02:02:08
 
-Date: Mon 12 Jan 20:07
-Smart time: 5h 30s ago
-Short time: 5h 30s ago
-Long time: Today
-Delta Min: -301
-Delta Hours: -5
-Delta days: 0
-time_since: 5 hours
+================================================================================
+1) Relative time for UI labels
+================================================================================
+Near future (compact countdown)
+When:       Tue 13 Jan 07:14:16
+smart_time: in 5h 12m
+short_time: in 5h 12m
+long_time:  Today
+delta_mins: 312
+delta_hours:5
+delta_days: 0
+HA time_until: 5 hours
+---
+Near past ("last seen")
+When:       Mon 12 Jan 22:58:04
+smart_time: 3h 4m ago
+short_time: 3h 4m ago
+long_time:  Today
+delta_mins: -184
+delta_hours:-3
+delta_days: 0
+HA time_since: 3 hours
+---
+Mid-range future (weeks/months wording)
+When:       Fri 6 Mar 03:03:08
+smart_time: in 7 weeks
+short_time: in 52d 1h
+long_time:  in 7 weeks
+delta_mins: 74941
+delta_hours:1249
+delta_days: 52
+HA time_until: 2 months
+---
+Far past (months/years wording)
+When:       Sat 9 Nov 02:02:08
+smart_time: 14 months ago
+short_time: 430d ago
+long_time:  14 months ago
+delta_mins: -619200
+delta_hours:-10320
+delta_days: -430
+HA time_since: 1 year
 
-Date: Tue 13 Jan 06:08
-Smart time: in 5h 30s
-Short time: in 5h 30s
-Long time: Today
-Delta Min: 301
-Delta Hours: 5
-Delta days: 0
-time_until: 5 hours
+================================================================================
+2) short_time stability (30-second buckets)
+================================================================================
+   Dashboards often refresh ~1 minute; bucketing reduces “jitter”.
+   Behaviour:
+     - <30s  => "now"
+     - 30s+  => bucketed to 30s steps
+     - seconds omitted once >= 1 day 
 
-Date: Thu 23 Apr 01:08
-Smart time: in 14 weeks
-Short time: in 99d 22h 59m
-Long time: in 14 weeks
-Delta Min: 143940
-Delta Hours: 2399
-Delta days: 100
-time_until: 3 months
+Future +20s (shows "now")
+When:       Tue 13 Jan 02:02:28
+smart_time: now
+short_time: now
+long_time:  Today
+delta_mins: 0
+delta_hours:0
+delta_days: 0
+HA time_until: 20 seconds
+---
+Future +30s (shows "in 30s")
+When:       Tue 13 Jan 02:02:38
+smart_time: now
+short_time: now
+long_time:  Today
+delta_mins: 0
+delta_hours:0
+delta_days: 0
+HA time_until: 30 seconds
+---
+Past -29s (shows "now")
+When:       Tue 13 Jan 02:01:39
+smart_time: now
+short_time: now
+long_time:  Today
+delta_mins: 0
+delta_hours:0
+delta_days: 0
+HA time_since: 29 seconds
+---
+Past -30s (shows "30s ago")
+When:       Tue 13 Jan 02:01:38
+smart_time: 30s ago
+short_time: 30s ago
+long_time:  Today
+delta_mins: -1
+delta_hours:0
+delta_days: 0
+HA time_since: 30 seconds
 
-Date: Sun 5 Oct 01:08
-Smart time: 14 weeks ago
-Short time: 100d 1h ago
-Long time: 14 weeks ago
-Delta Min: -144060
-Delta Hours: -2401
-Delta days: -100
-time_since: 3 months
+================================================================================
+3) smart_time threshold (short vs long)
+================================================================================
+   <14 days => short_time, >=14 days => long_time
 
-A Date: Sun 5 Oct 01:08:00
-B Date: Sat 4 Oct 22:03:56
-A->B Delta duration: +3h 4m 4s
-B->A Delta duration: -3h 4m 4s
+13d 23h away (uses short_time)
+When:       Tue 27 Jan 01:02:08
+smart_time: in 13d 22h 59m
+short_time: in 13d 22h 59m
+long_time:  in 14 days
+delta_mins: 20100
+delta_hours:335
+delta_days: 14
+HA time_until: 14 days
+---
+14d away (uses long_time)
+When:       Tue 27 Jan 02:02:08
+smart_time: in 13d 23h 59m
+short_time: in 13d 23h 59m
+long_time:  in 14 days
+delta_mins: 20160
+delta_hours:336
+delta_days: 14
+HA time_until: 14 days
 
-A Date: Sun 5 Oct 01:08:00
-B Date: Sat 4 Oct 22:07:56
-A->B Delta duration: +3h 4s
-B->A Delta duration: -3h 4s
+================================================================================
+4) Numeric deltas (rounded to nearest, half-up)
+================================================================================
+   Sign convention: future +, past -
+   Rounding: half-up (2.5 -> 3, -2.5 -> -3)
+Future +2h 24m (2.4h -> 2)
+Target:     Tue 13 Jan 04:26:08
+delta_mins: 144
+delta_hours:2
+delta_days: 0
+---
+Future +2h 30m (2.5h -> 3)
+Target:     Tue 13 Jan 04:32:08
+delta_mins: 150
+delta_hours:2
+delta_days: 0
+---
+Past -2h 30m (-2.5h -> -3)
+Target:     Mon 12 Jan 23:32:08
+delta_mins: -150
+delta_hours:-3
+delta_days: 0
 
-A Date: Sun 5 Oct 01:08:00
-B Date: Sat 4 Oct 22:08:00
-A->B Delta duration: +3h 
-B->A Delta duration: -3h 
+================================================================================
+5) Duration between two timestamps (delta_duration)
+================================================================================
+delta_duration(ts1, ts2, show_plus=true, zero_text="0s")
+A: Tue 13 Jan 01:00:05
+B: Mon 12 Jan 21:56:01
+A→B default:                 +3h 4m 4s
+A→B show_plus=false:         3h 4m 4s
+A→A default zero:            0s
+A→A zero_text="now":         now
+A→A no plus, zero_text="-":  -
+B→A default:                 -3h 4m 4s
 
-Formating 34.2 hours: 34h 12m
-Formating 34.223 hours: 34h 13m 23s
-Formating 4:23:23: 4h 23m 23s
-Formating 4:0:23: 4h 23s
-Formating 4:0:0: 4h
+================================================================================
+6) Formatting helpers
+================================================================================
+format_hours(decimal_hours) — decimal hours → "Xh Ym Zs"
+format_hours(1.5):     1h 30m
+format_hours(0.0167):  1m
+format_hours(-2.5083): -2h 30m 30s
+---
+format_hms("h:m:s" | "h:m" | "s") → "Xh Ym Zs"
+Convention: for m:s, pass 0:m:s
+
+format_hms('4:23:23'): 4h 23m 23s
+format_hms('4:3'):     4h 3m 
+format_hms('0:4:3'):   4m 3s
+format_hms('90'):      1m 30s
+format_hms('1:120'):   3h
 ```
 
 ```long_time``` displays timestamps in days, weeks and months; ```short_time``` in days, hours, minutes and seconds.
@@ -178,7 +370,7 @@ Formating 4:0:0: 4h
 
 ```delta_duration``` takes two timestamps and returns the days, hours, mins and seconds between them as a string.
 
-```format_hms``` takes a string of the formation h:m:s and turns it into 'h m s' with zero values removed - try it you'll see, it's good in dashboards!
+```format_hms``` takes a string of the formation h:m:s and turns it into 'h m s' with zero values removed - try it you'll see, it's great in dashboards!
 
 ```format_hours``` takes a decimal hours and formats it into 'h m s' format, again with zero values remove.
 
