@@ -6,55 +6,78 @@
    format_hours
 #}
 
-{# Return a string expressed in days #}
+{# Return a string expressed in days (calendar-ish rounding) #}
 {# Parameters:
    - ts: Timestamp
 #}
 {%- macro long_time(ts) -%}
-  {%- set d = ((as_timestamp(ts) + 43200 - as_timestamp(now())) / 43200) | int(0) -%}
+  {%- set now_ts = as_timestamp(now()) -%}
+  {%- set ts_ts  = as_timestamp(ts) -%}
+  {%- set delta  = ts_ts - now_ts -%}         {# seconds: future +, past - #}
+
+  {# round to nearest day using +12h, then truncate #}
+  {%- set d = ((delta + (43200 if delta >= 0 else -43200)) / 86400) | int(0) -%}
   {%- set abs_d = d | abs -%}
-  {%- set s = (
-    "Today" if d == 0 else
-    "Tomorrow" if d > 0 and d < 3 else
-    "Yesterday" if d < 0 and d > -3 else
-    ((abs_d + 1) / 2) | round | int(0) | string + " days" if abs_d < 28 else
-    ((abs_d + 1) / 14) | round | int(0) | string + " weeks" if abs_d < 120 else
-    ((abs_d + 1) / 60) | round | int(0) | string + " months" if abs_d < 1460 else
-    ((abs_d + 1) / 730) | round | int(0) | string + " years"
-  ) -%}
-  {%- if d > 0 and abs_d > 3 -%}
-    in {{ s }}
-  {%- elif d < 0 and abs_d > 2 -%}
-    {{ s }} ago
+
+  {%- if d == 0 -%}
+    Today
+  {%- elif d == 1 -%}
+    Tomorrow
+  {%- elif d == -1 -%}
+    Yesterday
   {%- else -%}
-    {{ s }}
+    {# simple half-up rounding without relying on Python's bankers-round #}
+    {%- set days_str = abs_d | string + " days" -%}
+    {%- set weeks    = ((abs_d / 7)  + 0.5) | int(0) -%}
+    {%- set months   = ((abs_d / 30) + 0.5) | int(0) -%}
+    {%- set years    = ((abs_d / 365)+ 0.5) | int(0) -%}
+
+    {%- set s = (
+      days_str if abs_d < 28 else
+      (weeks  | string + " weeks")  if abs_d < 120 else
+      (months | string + " months") if abs_d < 1460 else
+      (years  | string + " years")
+    ) -%}
+
+    {%- if d > 0 -%}
+      in {{ s }}
+    {%- else -%}
+      {{ s }} ago
+    {%- endif -%}
   {%- endif -%}
 {%- endmacro -%}
 
-{# Return a string expressed in hours #}
+{# Return a string expressed in hours/mins/secs (30s buckets) #}
 {# Parameters:
    - ts: Timestamp
 #}
 {%- macro short_time(ts) -%}
-  {%- set d = now()|as_timestamp - ts|as_timestamp -%}
-  {%- set d = (((d / 30) | round(0, 'ceil')) * 30) - 30 -%}
-  {%- set abs_d = d | abs -%}
-  {%- set days = (abs_d / 86400) | round(0, 'floor') -%}
-  {%- set hours = ((abs_d % 86400) / 3600) | round(0, 'floor') -%}
-  {%- set mins = (((abs_d % 86400) % 3600) / 60) | round(0, 'floor') -%}
-  {%- set secs = (((abs_d % 86400) % 3600) % 60) | round(0, 'floor') -%}
-  {%- set s = (
-    (days|string + 'd ' if days > 0 else '') +
-    (hours|string + 'h ' if hours > 0 else '') +
-    (mins|string + 'm ' if mins > 0 else '') +
-    (secs|string + 's ' if secs > 0 and days < 1 else '')
-  ) -%}
-  {%- if d == 0 -%}
+  {%- set now_ts = as_timestamp(now()) -%}
+  {%- set ts_ts  = as_timestamp(ts) -%}
+  {%- set delta  = ts_ts - now_ts -%}         {# seconds: future +, past - #}
+
+  {# bucket to 30s, with <30s => now #}
+  {%- set abs_bucket = ((delta | abs) / 30) | int(0) * 30 -%}
+  {%- if abs_bucket == 0 -%}
     now
-  {%- elif d < 0 -%}
-    in {{ s | trim }}
   {%- else -%}
-    {{ s | trim }} ago
+    {%- set days  = (abs_bucket / 86400) | int(0) -%}
+    {%- set hours = ((abs_bucket % 86400) / 3600) | int(0) -%}
+    {%- set mins  = (((abs_bucket % 86400) % 3600) / 60) | int(0) -%}
+    {%- set secs  = (((abs_bucket % 86400) % 3600) % 60) | int(0) -%}
+
+    {%- set s = (
+      (days|string  + 'd ' if days  > 0 else '') +
+      (hours|string + 'h ' if hours > 0 else '') +
+      (mins|string  + 'm ' if mins  > 0 else '') +
+      (secs|string  + 's ' if secs  > 0 and days < 1 else '')
+    ) | trim -%}
+
+    {%- if delta > 0 -%}
+      in {{ s }}
+    {%- else -%}
+      {{ s }} ago
+    {%- endif -%}
   {%- endif -%}
 {%- endmacro -%}
 
